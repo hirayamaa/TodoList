@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
 <head>
   <meta charset="UTF-8">
   <title>ToDo List</title>
@@ -8,6 +8,13 @@
 <body>
   <form th:action="@{/}" method="post" th:object="${todoData}">
     <table>
+      <tr>
+        <th>id</th>
+        <td>
+          <span th:text="*{id}"></span>
+          <input type="hidden" th:field="*{id}">
+        </td>
+      </tr>
       <tr>
         <th>件名</th>
         <td>
@@ -18,9 +25,9 @@
       <tr>
         <th>重要度</th>
         <td>
-          <input type="radio" value="1" th:field="*{important}">高
-          <input type="radio" value="0" th:field="*{important}">低
-          <div th:if="${#fields.hasErrors('important')}" th:errors="*{important}" th:errorclass="red"></div>
+          <input type="radio" value="1" th:field="*{importance}">高
+          <input type="radio" value="0" th:field="*{importance}">低
+          <div th:if="${#fields.hasErrors('importance')}" th:errors="*{importance}" th:errorclass="red"></div>
         </td>
       </tr>
       <tr>
@@ -49,7 +56,12 @@
         </td>
       </tr>
     </table>
-    <div>
+    <div th:if="${session.mode == 'update'}">
+      <button type="submit" th:formaction="@{/todo/update}">更新</button>
+      <button type="submit" th:formaction="@{/todo/delete}">削除</button>
+      <button type="submit" th:formaction="@{/todo/cancel}">キャンセル</button>
+    </div>
+    <div th:unless="${session.mode == 'update'}">
       <button type="submit" th:formaction="@{/todo/create}">登録</button>
       <button type="submit" th:formaction="@{/todo/cancel}">キャンセル</button>
     </div>

@@ -18,7 +18,7 @@ public class TodoData {
     private String title;
 
     @NotNull(message = "重要度を選択してください")
-    private Integer important;
+    private Integer importance;
 
     @Min(value = 0, message = "緊急度を設定してください")
     private Integer urgency;
@@ -35,7 +35,7 @@ public class TodoData {
         var todo = new Todo();
         todo.setId(id);
         todo.setTitle(title);
-        todo.setImportance(important);
+        todo.setImportance(importance);
         todo.setUrgency(urgency);
         todo.setDone(done);
         SimpleDateFormat sdFormat = new SimpleDateFormat("yyyy-MM-dd");
