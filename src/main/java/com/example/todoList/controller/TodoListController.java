@@ -2,6 +2,7 @@ package com.example.todoList.controller;
 
 import com.example.todoList.entity.Todo;
 import com.example.todoList.form.TodoData;
+import com.example.todoList.form.TodoQuery;
 import com.example.todoList.repository.TodoRepository;
 import com.example.todoList.service.TodoService;
 import jakarta.servlet.http.HttpSession;
@@ -32,6 +33,7 @@ public class TodoListController {
         mv.setViewName("todoList");
         List<Todo> todoList = todoRepository.findAll();
         mv.addObject("todoList", todoList);
+        mv.addObject("todoQuery", new TodoQuery());
         return mv;
     }
 
@@ -97,5 +99,18 @@ public class TodoListController {
     public String deleteTodo(@ModelAttribute TodoData todoData) {
         todoRepository.deleteById(todoData.getId());
         return "redirect:/todo";
+    }
+
+    @PostMapping("/todo/query")
+    public ModelAndView queryTodo(@ModelAttribute TodoQuery todoQuery,
+                                  BindingResult result, ModelAndView mv) {
+        mv.setViewName("todoList");
+        List<Todo> todoList = null;
+        if (todoService.isValid(todoQuery, result)) {
+            // エラーがなければ検索
+            todoList = todoService.doQuery(todoQuery);
+            mv.addObject("todoList", todoList);
+        }
+        return mv;
     }
 }
