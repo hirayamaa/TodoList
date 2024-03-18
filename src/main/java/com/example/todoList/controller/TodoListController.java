@@ -1,12 +1,19 @@
 package com.example.todoList.controller;
 
+import com.example.todoList.dao.TodoDaoImpl;
 import com.example.todoList.entity.Todo;
 import com.example.todoList.form.TodoData;
 import com.example.todoList.form.TodoQuery;
 import com.example.todoList.repository.TodoRepository;
 import com.example.todoList.service.TodoService;
+import jakarta.annotation.PostConstruct;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.servlet.http.HttpSession;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -17,28 +24,39 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.util.List;
 
 @Controller
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class TodoListController {
     private final TodoRepository todoRepository;
     private final TodoService todoService;
     private final HttpSession session;
 
+    @PersistenceContext
+    private EntityManager entityManager;
+    TodoDaoImpl todoDaoImpl;
+
+    @PostConstruct
+    public void init() {
+        todoDaoImpl = new TodoDaoImpl(entityManager);
+    }
+
     // Todo一覧表示
     @GetMapping("/todo")
-    public ModelAndView showTodoList(ModelAndView mv) {
+    public ModelAndView showTodoList(ModelAndView mv,
+                                     @PageableDefault(page = 0, size = 5, sort = "id") Pageable pageable) {
         // 一覧を検索して表示する
         mv.setViewName("todoList");
-        List<Todo> todoList = todoRepository.findAll();
-        mv.addObject("todoList", todoList);
+        Page<Todo> todoPage = todoRepository.findAll(pageable);
+        mv.addObject("todoList", todoPage.getContent());
+        mv.addObject("todoPage", todoPage);
         mv.addObject("todoQuery", new TodoQuery());
+        session.setAttribute("todoQuery", new TodoQuery());
         return mv;
     }
 
     // Todo一覧画面で新規追加リンクがクリックされたとき
-    @GetMapping("/todo/create")
+    @PostMapping("/todo/create/form")
     public ModelAndView createTodo(ModelAndView mv) {
         mv.setViewName("todoForm");
         mv.addObject("todoData", new TodoData());
@@ -47,7 +65,7 @@ public class TodoListController {
         return mv;
     }
     // Todo追加処理
-    @PostMapping("/todo/create")
+    @PostMapping("/todo/create/do")
     public String createTodo(@ModelAttribute @Validated TodoData todoData,
                              BindingResult result, Model model) {
         // エラーチェック
@@ -101,15 +119,35 @@ public class TodoListController {
         return "redirect:/todo";
     }
 
+    @GetMapping("/todo/query")
+    public ModelAndView queryTodo(@PageableDefault(page = 0, size = 5) Pageable pageable, ModelAndView mv) {
+        mv.setViewName("todoList");
+        // sessionに保存されている条件で検索
+        TodoQuery todoQuery = (TodoQuery) session.getAttribute("todoQuery");
+        var todoPage = todoDaoImpl.findByCriteria(todoQuery, pageable);
+        mv.addObject("todoQuery", todoQuery);
+        mv.addObject("todoPage", todoPage);
+        mv.addObject("todoList", todoPage.getContent());
+        return mv;
+    }
+
     @PostMapping("/todo/query")
     public ModelAndView queryTodo(@ModelAttribute TodoQuery todoQuery,
-                                  BindingResult result, ModelAndView mv) {
+                                  BindingResult result,
+                                  @PageableDefault(page = 0, size = 5) Pageable pageable,
+                                  ModelAndView mv) {
         mv.setViewName("todoList");
-        List<Todo> todoList = null;
+        Page<Todo> todoPage;
         if (todoService.isValid(todoQuery, result)) {
             // エラーがなければ検索
-            todoList = todoService.doQuery(todoQuery);
-            mv.addObject("todoList", todoList);
+            todoPage = todoDaoImpl.findByCriteria(todoQuery, pageable);
+            // 入力された条件をsessionに保存
+            session.setAttribute("todoQuery", todoQuery);
+            mv.addObject("todoPage", todoPage);
+            mv.addObject("todoList", todoPage.getContent());
+        } else {
+            mv.addObject("todoPage", null);
+            mv.addObject("todoList", null);
         }
         return mv;
     }
