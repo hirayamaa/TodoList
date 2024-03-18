@@ -44,7 +44,7 @@ public class TodoService {
         String deadline = todoData.getDeadline();
         if (!deadline.isEmpty()) {
             var today = LocalDate.now();
-            LocalDate deadlineDate = null;
+            LocalDate deadlineDate;
             try {
                 deadlineDate = LocalDate.parse(deadline);
                 if (deadlineDate.isBefore(today)) {

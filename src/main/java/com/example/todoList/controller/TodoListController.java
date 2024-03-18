@@ -1,5 +1,6 @@
 package com.example.todoList.controller;
 
+import com.example.todoList.common.OpMsg;
 import com.example.todoList.dao.TodoDaoImpl;
 import com.example.todoList.entity.Todo;
 import com.example.todoList.form.TodoData;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 
 @Controller
@@ -44,7 +46,7 @@ public class TodoListController {
     // Todo一覧表示
     @GetMapping("/todo")
     public ModelAndView showTodoList(ModelAndView mv,
-                                     @PageableDefault(page = 0, size = 5, sort = "id") Pageable pageable) {
+                                     @PageableDefault(size = 5, sort = "id") Pageable pageable) {
         // 一覧を検索して表示する
         mv.setViewName("todoList");
         Page<Todo> todoPage = todoRepository.findAll(pageable);
@@ -67,16 +69,19 @@ public class TodoListController {
     // Todo追加処理
     @PostMapping("/todo/create/do")
     public String createTodo(@ModelAttribute @Validated TodoData todoData,
-                             BindingResult result, Model model) {
+                             BindingResult result, Model model,
+                             RedirectAttributes redirectAttributes) {
         // エラーチェック
         boolean isValid = todoService.isValid(todoData, result);
         if (!result.hasErrors() && isValid) {
             // エラーなし
             var todo = todoData.toEntity();
             todoRepository.saveAndFlush(todo);
+            redirectAttributes.addFlashAttribute("msg", new OpMsg("I", "Todoを追加しました"));
             return "redirect:/todo";
         } else {
             // エラーあり
+            model.addAttribute("msg", new OpMsg("E", "入力に誤りがあります"));
             return "todoForm";
         }
     }
@@ -99,28 +104,36 @@ public class TodoListController {
 
     @PostMapping("/todo/update")
     public String updateTodo(@ModelAttribute @Validated TodoData todoData,
-                             BindingResult result, Model model) {
+                             BindingResult result, Model model,
+                             RedirectAttributes redirectAttributes) {
         // エラーチェック
         boolean isValid = todoService.isValid(todoData, result);
         if (!result.hasErrors() && isValid) {
             // エラーなしの場合
             var todo = todoData.toEntity();
             todoRepository.saveAndFlush(todo);
+            // リダイレクト先でメッセージを表示する
+            redirectAttributes.addFlashAttribute("msg",
+                    new OpMsg("I", "Todoを更新しました"));
             return "redirect:/todo";
         } else {
             // エラーあり
+            model.addAttribute("msg", new OpMsg("E", "入力に誤りがあります"));
             return "todoForm";
         }
     }
 
     @PostMapping("/todo/delete")
-    public String deleteTodo(@ModelAttribute TodoData todoData) {
+    public String deleteTodo(@ModelAttribute TodoData todoData,
+                             RedirectAttributes redirectAttributes) {
         todoRepository.deleteById(todoData.getId());
+        redirectAttributes.addFlashAttribute("msg",
+                new OpMsg("I", "Todoを削除しました"));
         return "redirect:/todo";
     }
 
     @GetMapping("/todo/query")
-    public ModelAndView queryTodo(@PageableDefault(page = 0, size = 5) Pageable pageable, ModelAndView mv) {
+    public ModelAndView queryTodo(@PageableDefault(size = 5) Pageable pageable, ModelAndView mv) {
         mv.setViewName("todoList");
         // sessionに保存されている条件で検索
         TodoQuery todoQuery = (TodoQuery) session.getAttribute("todoQuery");
@@ -134,7 +147,7 @@ public class TodoListController {
     @PostMapping("/todo/query")
     public ModelAndView queryTodo(@ModelAttribute TodoQuery todoQuery,
                                   BindingResult result,
-                                  @PageableDefault(page = 0, size = 5) Pageable pageable,
+                                  @PageableDefault(size = 5) Pageable pageable,
                                   ModelAndView mv) {
         mv.setViewName("todoList");
         Page<Todo> todoPage;
@@ -145,7 +158,14 @@ public class TodoListController {
             session.setAttribute("todoQuery", todoQuery);
             mv.addObject("todoPage", todoPage);
             mv.addObject("todoList", todoPage.getContent());
+            // 該当するTodoがなければ、メッセージを表示
+            if (todoPage.getContent().isEmpty()) {
+                mv.addObject("msg",
+                        new OpMsg("W", "該当するTodoが見つかりませんでした"));
+            }
         } else {
+            // 検索条件エラーあり
+            mv.addObject("msg", new OpMsg("E", "入力に誤りがあります"));
             mv.addObject("todoPage", null);
             mv.addObject("todoList", null);
         }

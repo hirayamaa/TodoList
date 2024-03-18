@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ToDo List</title>
+  <link th:href="@{/css/style.css}" rel="stylesheet" type="text/css">
+</head>
+<body>
+  <div th:fragment="msg_area">
+    <div th:if="${msg != null}">
+      <div th:if="${msg.msgType == 'E'}">
+        <div class="err_msg">
+          <img th:src="@{/icons/error_icon.png}" class="va">&nbsp;
+          <span class="va" th:text="${msg.getMsgText()}"></span>
+        </div>
+      </div>
+      <div th:if="${msg.msgType == 'W'}">
+        <div class="warn_msg">
+          <img th:src="@{/icons/warn_icon.png}" class="va">&nbsp;
+          <span class="va" th:text="${msg.getMsgText()}"></span>
+        </div>
+      </div>
+      <div th:if="${msg.msgType == 'I'}">
+        <div class="info_msg">
+          <img th:src="@{/icons/info_icon.png}" class="va">&nbsp;
+          <span class="va" th:text="${msg.getMsgText()}"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

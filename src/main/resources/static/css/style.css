@@ -34,3 +34,35 @@ button {
 #nav li {
     margin-right: 10px;
 }
+
+.va {
+    vertical-align: middle;
+}
+
+.info_msg {
+    margin-bottom: 0.75em;
+    padding: 0.75em 1em;
+    width: 50%;
+    color: blue;
+    background-color: #dfefff;
+    border: 1px solid #379bff;
+    border-radius: 8px;
+}
+.warn_msg {
+    margin-bottom: 0.75em;
+    padding: 0.75em 1em;
+    width: 50%;
+    color: #bd3e00;
+    background-color: #ffffc6;
+    border: 1px solid #ff8040;
+    border-radius: 8px;
+}
+.err_msg {
+    margin-bottom: 0.75em;
+    padding: 0.75em 1em;
+    width: 50%;
+    color: red;
+    background-color: #ffe6e6;
+    border: 1px solid #ff8080;
+    border-radius: 8px;
+}
