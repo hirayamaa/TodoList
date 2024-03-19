@@ -2,9 +2,11 @@ package com.example.todoList.service;
 
 import com.example.todoList.common.Utils;
 import com.example.todoList.entity.Todo;
+import com.example.todoList.form.TaskData;
 import com.example.todoList.form.TodoData;
 import com.example.todoList.form.TodoQuery;
 import com.example.todoList.repository.TodoRepository;
+import jdk.jshell.execution.Util;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.BindingResult;
@@ -60,6 +62,32 @@ public class TodoService {
                 ans = false;
             }
         }
+        // Taskのチェック
+        List<TaskData> taskList = todoData.getTaskList();
+        if (taskList != null) {
+            for (var n = 0; n < taskList.size(); n++) {
+                var taskData = taskList.get(n);
+                // 全角スペースだけで構成されていたらエラー
+                if (Utils.isBlank(taskData.getTitle())) {
+                    if (Utils.isAllDoubleSpace(taskData.getTitle())) {
+                        var fieldError = new FieldError(result.getObjectName(),
+                                "taskList[" + n + "].title",
+                                "件名が全角スペースです");
+                        result.addError(fieldError);
+                        ans = false;
+                    }
+                }
+                // 期限の形式チェック
+                String taskDeadline = taskData.getDeadline();
+                if (!taskDeadline.isEmpty() && !Utils.isValidDateFormat(taskDeadline)) {
+                    var fieldError = new FieldError(result.getObjectName(),
+                            "taskList[" + n + "].deadline",
+                            "期限を入力するときはyyyy-mm-dd形式で入力してください");
+                    result.addError(fieldError);
+                    ans = false;
+                }
+            }
+        }
         return ans;
     }
 
@@ -95,7 +123,7 @@ public class TodoService {
     }
 
     public List<Todo> doQuery(TodoQuery todoQuery) {
-        List<Todo> todoList = null;
+        List<Todo> todoList;
         if (!todoQuery.getTitle().isEmpty()) {
             // タイトルで検索
             todoList = todoRepository.findByTitleLike("%" + todoQuery.getTitle() + "%");

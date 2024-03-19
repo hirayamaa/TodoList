@@ -115,7 +115,7 @@ public class TodoListController {
             // リダイレクト先でメッセージを表示する
             redirectAttributes.addFlashAttribute("msg",
                     new OpMsg("I", "Todoを更新しました"));
-            return "redirect:/todo";
+            return "redirect:/todo/" + todo.getId();
         } else {
             // エラーあり
             model.addAttribute("msg", new OpMsg("E", "入力に誤りがあります"));

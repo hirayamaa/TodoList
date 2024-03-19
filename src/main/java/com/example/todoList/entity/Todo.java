@@ -2,12 +2,16 @@ package com.example.todoList.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.ToString;
 
 import java.sql.Date;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "todo")
 @Data
+@ToString(exclude = "taskList")
 public class Todo {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,4 +32,12 @@ public class Todo {
 
     @Column(name = "done")
     private String done;
+
+    @OneToMany(mappedBy = "todo", cascade = CascadeType.ALL)
+    private List<Task> taskList = new ArrayList<>();
+
+    public void addTask(Task task) {
+        task.setTodo(this);
+        taskList.add(task);
+    }
 }

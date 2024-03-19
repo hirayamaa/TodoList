@@ -56,6 +56,7 @@
       <th>件名</th>
       <th>重要度</th>
       <th>緊急度</th>
+      <th>タスク</th>
       <th>期限</th>
       <th>完了</th>
     </tr>
@@ -64,6 +65,7 @@
       <td><a th:href="@{/todo/__${todo.id}__}" th:text="${todo.title}"></a> </td>
       <td th:text="${todo.importance == 1 ? '★★★':'★'}"></td>
       <td th:text="${todo.urgency == 1 ? '★★★':'★'}"></td>
+      <td th:text="${#lists.size(todo.taskList)}" style="text-align: center"></td>
       <td th:text="${todo.deadline}"></td>
       <td th:text="${todo.done == 'Y' ? '完了': ''}"></td>
     </tr>
