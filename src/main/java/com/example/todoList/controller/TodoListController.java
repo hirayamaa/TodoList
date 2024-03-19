@@ -5,6 +5,7 @@ import com.example.todoList.dao.TodoDaoImpl;
 import com.example.todoList.entity.Todo;
 import com.example.todoList.form.TodoData;
 import com.example.todoList.form.TodoQuery;
+import com.example.todoList.repository.AttachedFileRepository;
 import com.example.todoList.repository.TaskRepository;
 import com.example.todoList.repository.TodoRepository;
 import com.example.todoList.service.TodoService;
@@ -21,6 +22,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -30,6 +32,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class TodoListController {
     private final TodoRepository todoRepository;
     private final TaskRepository taskRepository;
+    private final AttachedFileRepository attachedFileRepository;
     private final TodoService todoService;
     private final HttpSession session;
 
@@ -95,7 +98,8 @@ public class TodoListController {
     public ModelAndView todoById(@PathVariable(name="id") int id, ModelAndView mv) {
         mv.setViewName("todoForm");
         var todo = todoRepository.findById(id).get();
-        mv.addObject("todoData", new TodoData(todo));
+        var attachedFiles = attachedFileRepository.findByTodoIdOrderById(id);
+        mv.addObject("todoData", new TodoData(todo, attachedFiles));
         // 画面表示するボタンの切り替えに使用
         session.setAttribute("mode", "update");
         return mv;
@@ -125,6 +129,13 @@ public class TodoListController {
     @PostMapping("/todo/delete")
     public String deleteTodo(@ModelAttribute TodoData todoData,
                              RedirectAttributes redirectAttributes) {
+        var todoId = todoData.getId();
+        // 添付ファイルを削除
+        todoService.deleteAttachedFile(todoId);
+        // attached_fileテーブルから削除
+        var attachedFiles = attachedFileRepository.findByTodoIdOrderById(todoId);
+        attachedFileRepository.deleteAllInBatch(attachedFiles);
+        // todoを削除
         todoRepository.deleteById(todoData.getId());
         redirectAttributes.addFlashAttribute("msg",
                 new OpMsg("I", "Todoを削除しました"));
@@ -202,4 +213,35 @@ public class TodoListController {
         }
     }
 
+    // 添付ファイルをアップロードする
+    @PostMapping("todo/af/upload")
+    public String uploadAttachedFile(@RequestParam("todo_id") int todoId,
+                                     @RequestParam("note") String note,
+                                     @RequestParam("file_contents") MultipartFile fileContents,
+                                     RedirectAttributes redirectAttributes) {
+        if (fileContents.isEmpty()) {
+            redirectAttributes.addFlashAttribute("msg",
+                    new OpMsg("W", "指定されたファイルが空です"));
+        } else {
+            // ファイルを保存する
+            todoService.saveAttachedFile(todoId, note, fileContents);
+            redirectAttributes.addFlashAttribute("msg",
+                    new OpMsg("I", "アップロードが完了しました"));
+        }
+        return "redirect:/todo/" + todoId;
+    }
+
+    // 添付ファイルを削除する
+    @GetMapping("/todo/af/delete")
+    public String deleteAttachedFile(@RequestParam(name="af_id") int afId,
+                                     @RequestParam(name = "todo_id") int todoId,
+                                     RedirectAttributes redirectAttributes) {
+        // 添付ファイルを削除
+        todoService.deleteAttachedFile(afId);
+        // attached_fileテーブルから削除
+        attachedFileRepository.deleteById(afId);
+        redirectAttributes.addFlashAttribute("msg",
+                new OpMsg("I", "添付ファイルを削除しました"));
+        return "redirect:/todo/" + todoId;
+    }
 }

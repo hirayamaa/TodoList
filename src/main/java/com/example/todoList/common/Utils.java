@@ -1,5 +1,7 @@
 package com.example.todoList.common;
 
+import com.example.todoList.entity.AttachedFile;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.DateTimeException;
@@ -155,5 +157,35 @@ public class Utils {
         }
 
         return s;
+    }
+
+    public static String makeAttachedFilePath(String path, AttachedFile af) {
+        return path + "/" + af.getCreateTime() + "_" + af.getFileName();
+    }
+
+    public static String ext2contentType(String ext) {
+        String contentType;
+        if (ext == null) {
+            return "";
+        }
+        switch (ext.toLowerCase()) {
+            case "gif":
+                contentType = "image/gif";
+            break;
+            case "jpg":
+            case "jpeg":
+                contentType = "image/jpeg";
+                break;
+            case "png":
+                contentType = "image/png";
+                break;
+            case "pdf":
+                contentType = "application/pdf";
+                break;
+            default:
+                contentType = "";
+                break;
+        }
+        return contentType;
     }
 }

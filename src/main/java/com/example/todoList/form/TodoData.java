@@ -1,6 +1,7 @@
 package com.example.todoList.form;
 
 import com.example.todoList.common.Utils;
+import com.example.todoList.entity.AttachedFile;
 import com.example.todoList.entity.Task;
 import com.example.todoList.entity.Todo;
 import jakarta.validation.Valid;
@@ -39,7 +40,9 @@ public class TodoData {
 
     private TaskData newTask;
 
-    public TodoData(Todo todo) {
+    private List<AttachedFileData> attachedFileList;
+
+    public TodoData(Todo todo, List<AttachedFile> attachedFiles) {
         this.id = todo.getId();
         this.title = todo.getTitle();
         this.importance = todo.getImportance();
@@ -55,6 +58,23 @@ public class TodoData {
         }
         // 新規追加用Task
         newTask = new TaskData();
+        // 添付ファイル
+        attachedFileList = new ArrayList<>();
+        String fileName;
+        String fext;
+        String contentType;
+        boolean isOpenNewWindow;
+        for (var af : attachedFiles) {
+            // ファイル名
+            fileName = af.getFileName();
+            // 拡張子
+            fext = fileName.substring(fileName.lastIndexOf(".") + 1);
+            // Content-Type
+            contentType = Utils.ext2contentType(fext);
+            // 別Windowで表示するか
+            isOpenNewWindow = !contentType.isEmpty();
+            attachedFileList.add(new AttachedFileData(af.getId(), fileName, af.getNote(), isOpenNewWindow));
+        }
     }
 
     /**

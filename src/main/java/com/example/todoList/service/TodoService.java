@@ -1,26 +1,40 @@
 package com.example.todoList.service;
 
 import com.example.todoList.common.Utils;
+import com.example.todoList.entity.AttachedFile;
 import com.example.todoList.entity.Todo;
 import com.example.todoList.form.TaskData;
 import com.example.todoList.form.TodoData;
 import com.example.todoList.form.TodoQuery;
+import com.example.todoList.repository.AttachedFileRepository;
 import com.example.todoList.repository.TodoRepository;
-import jdk.jshell.execution.Util;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.time.DateTimeException;
 import java.time.LocalDate;
+import java.util.Date;
 import java.util.List;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class TodoService {
 
     private final TodoRepository todoRepository;
+    private final AttachedFileRepository attachedFileRepository;
+
+    @Value("${attached.file.path}")
+    private String ATTACHED_FILE_PATH;
 
     public boolean isValid(TodoData todoData, BindingResult result) {
         boolean ans = true;
@@ -206,5 +220,43 @@ public class TodoService {
             }
         }
         return ans;
+    }
+
+    public void saveAttachedFile(int todoId, String note, MultipartFile fileContents) {
+        // アップロード元ファイル名
+        var fileName = fileContents.getOriginalFilename();
+        // 格納フォルダの存在チェック
+        var uploadDir = new File(ATTACHED_FILE_PATH);
+        if (!uploadDir.exists()) {
+            // フォルダが存在しない場合、作成する
+            uploadDir.mkdirs();
+        }
+        // 添付ファイルの格納時刻を取得
+        var sdf = new SimpleDateFormat("yyyyMMddHHmmssSSS");
+        var createTime = sdf.format(new Date());
+        // テーブルに格納するインスタンスを作成
+        var af = new AttachedFile();
+        af.setTodoId(todoId);
+        af.setFileName(fileName);
+        af.setCreateTime(createTime);
+        af.setNote(note);
+
+        // アップロードファイルの内容を取得
+        byte[] contents;
+        try (BufferedOutputStream bos = new BufferedOutputStream(
+                new FileOutputStream(Utils.makeAttachedFilePath(ATTACHED_FILE_PATH, af)))) {
+            contents = fileContents.getBytes();
+            bos.write(contents);
+            // テーブルに登録
+            attachedFileRepository.saveAndFlush(af);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    // 添付ファイル削除処理
+    public void deleteAttachedFile(int afId) {
+        var af = attachedFileRepository.findById(afId).get();
+        var file = new File(Utils.makeAttachedFilePath(ATTACHED_FILE_PATH, af));
+        file.delete();
     }
 }

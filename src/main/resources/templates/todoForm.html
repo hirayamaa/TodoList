@@ -8,55 +8,87 @@
 <body>
   <div th:replace="~{fragments :: msg_area}"></div>
   <form th:action="@{/}" method="post" th:object="${todoData}">
-    <table>
-      <tr>
-        <th>id</th>
-        <td>
-          <span th:text="*{id}"></span>
-          <input type="hidden" th:field="*{id}">
-        </td>
-      </tr>
-      <tr>
-        <th>件名</th>
-        <td>
-          <input type="text" name="title" size="40" th:value="*{title}">
-          <div th:if="${#fields.hasErrors('title')}" th:errors="*{title}" th:errorclass="red"></div>
-        </td>
-      </tr>
-      <tr>
-        <th>重要度</th>
-        <td>
-          <input type="radio" value="1" th:field="*{importance}">高
-          <input type="radio" value="0" th:field="*{importance}">低
-          <div th:if="${#fields.hasErrors('importance')}" th:errors="*{importance}" th:errorclass="red"></div>
-        </td>
-      </tr>
-      <tr>
-        <th>緊急度</th>
-        <td>
-          <select name="urgency">
-            <option value="-1" th:field="*{urgency}">選択してください</option>
-            <option value="1" th:field="*{urgency}">高</option>
-            <option value="0" th:field="*{urgency}">低</option>
-          </select>
-          <div th:if="${#fields.hasErrors('urgency')}" th:errors="*{urgency}" th:errorclass="red"></div>
-        </td>
-      </tr>
-      <tr>
-        <th>期限</th>
-        <td>
-          <input type="text" name="deadline" th:value="*{deadline}" placeholder="yyyy-mm-dd">
-          <div th:if="${#fields.hasErrors('deadline')}" th:errors="*{deadline}" th:errorclass="red"></div>
-        </td>
-      </tr>
-      <tr>
-        <th>チェック</th>
-        <td>
-          <input type="checkbox" value="Y" th:field="*{done}">完了
-          <input type="hidden" name="!done" value="N">
-        </td>
-      </tr>
-    </table>
+    <div style="display: flex">
+      <div>
+        ■Todo
+        <table>
+          <tr>
+            <th>id</th>
+            <td>
+              <span th:text="*{id}"></span>
+              <input type="hidden" th:field="*{id}">
+            </td>
+          </tr>
+          <tr>
+            <th>件名</th>
+            <td>
+              <input type="text" name="title" size="40" th:value="*{title}">
+              <div th:if="${#fields.hasErrors('title')}" th:errors="*{title}" th:errorclass="red"></div>
+            </td>
+          </tr>
+          <tr>
+            <th>重要度</th>
+            <td>
+              <input type="radio" value="1" th:field="*{importance}">高
+              <input type="radio" value="0" th:field="*{importance}">低
+              <div th:if="${#fields.hasErrors('importance')}" th:errors="*{importance}" th:errorclass="red"></div>
+            </td>
+          </tr>
+          <tr>
+            <th>緊急度</th>
+            <td>
+              <select name="urgency">
+                <option value="-1" th:field="*{urgency}">選択してください</option>
+                <option value="1" th:field="*{urgency}">高</option>
+                <option value="0" th:field="*{urgency}">低</option>
+              </select>
+              <div th:if="${#fields.hasErrors('urgency')}" th:errors="*{urgency}" th:errorclass="red"></div>
+            </td>
+          </tr>
+          <tr>
+            <th>期限</th>
+            <td>
+              <input type="text" name="deadline" th:value="*{deadline}" placeholder="yyyy-mm-dd">
+              <div th:if="${#fields.hasErrors('deadline')}" th:errors="*{deadline}" th:errorclass="red"></div>
+            </td>
+          </tr>
+          <tr>
+            <th>チェック</th>
+            <td>
+              <input type="checkbox" value="Y" th:field="*{done}">完了
+              <input type="hidden" name="!done" value="N">
+            </td>
+          </tr>
+        </table>
+      </div>
+      <div th:if="${session.mode == 'update'}">
+        <div style="margin-left: 3em;">
+          ■添付ファイル
+          <table>
+            <tr>
+              <th>id</th>
+              <th>ファイル名</th>
+              <th>メモ</th>
+              <th></th>
+            </tr>
+            <tr th:each="af: *{attachedFileList}">
+              <td th:text="${af.id}"></td>
+              <td th:if="${af.openInNewTab}">
+                <a th:href="@{/todo/af/download/__${af.id}__}" th:text="${af.fileName}"
+                   target="_blank" rel="noopener noreferrer"></a>
+              </td>
+              <td th:unless="${af.openInNewTab}">
+                <a th:href="@{/todo/af/download/__${af.id}__}" th:text="${af.fileName}"></a>
+              </td>
+              <td th:text="${af.note}"></td>
+              <td>
+                <a th:href="@{/todo/af/delete(af_id=${af.id}, todo_id=${todoData.id})}" th:text="削除"></a>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
     <div th:if="${session.mode == 'update'}">
       <hr style="margin-top: 2em; margin-bottom: 1em;">
       <!-- タスク更新エリア    -->
@@ -130,5 +162,27 @@
       <button type="submit" th:formaction="@{/todo/cancel}">戻る</button>
     </div>
   </form>
+  <!-- 添付ファイル登録エリア  -->
+  <div th:if="${session.mode == 'update'}">
+    <hr style="margin-top: 1em;">
+    <form th:action="@{/todo/af/upload}" enctype="multipart/form-data" method="post">
+      <table>
+        <tr>
+          <th th:text="ファイル名"></th>
+          <th th:text="メモ"></th>
+        </tr>
+        <tr>
+          <td>
+            <input type="file" name="file_contents" required>
+          </td>
+          <td>
+            <input type="text" name="note" size="40">
+          </td>
+        </tr>
+      </table>
+      <button type="submit" th:text="登録"></button>
+      <input type="hidden" name="todo_id" th:value="${todoData.id}">
+    </form>
+  </div>
 </body>
 </html>
