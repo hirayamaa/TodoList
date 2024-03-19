@@ -57,15 +57,17 @@
         </td>
       </tr>
     </table>
-    <hr style="margin-top: 2em; margin-bottom: 1em;">
-    ■Task
-    <div th:if="${#lists.size(todoData.taskList)}>0">
+    <div th:if="${session.mode == 'update'}">
+      <hr style="margin-top: 2em; margin-bottom: 1em;">
+      <!-- タスク更新エリア    -->
+      ■Task
       <table>
         <tr>
           <th>id</th>
           <th>タイトル</th>
           <th>期限</th>
           <th>チェック</th>
+          <th></th>
         </tr>
         <tr th:each="task, stat: *{taskList}">
           <td>
@@ -88,6 +90,32 @@
             <input type="checkbox" th:name="${'taskList[' + stat.index + '].done'}" value="Y"
                    th:checked="*{taskList[__${stat.index}__].done == 'Y'}">
             <input type="hidden" th:name="${'!taskList[__${stat.index}__].done'}" value="N">
+          </td>
+          <td>
+            <a th:href="@{/task/delete(task_id=${task.id}, todo_id=*{id})}" th:text="削除"></a>
+          </td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>
+            <input type="text" name="newTask.title" size="40" th:value="*{newTask.title}">
+            <div th:if="${#fields.hasErrors('newTask.title')}" th:errors="*{newTask.title}"
+                 th:errorclass="red"></div>
+          </td>
+          <td>
+            <input type="text" name="newTask.deadline" size="10" th:value="*{newTask.title}"
+                   placeholder="yyyy-mm-dd">
+            <div th:if="${#fields.hasErrors('newTask.deadline')}" th:errors="*{newTask.deadline}"
+                 th:errorclass="red"></div>
+          </td>
+          <td>
+            <input type="checkbox" name="newTask.done" value="Y"
+                   th:checked="*{newTask.done == 'Y'}">
+            <input type="hidden" name="!newTask.done" value="N">
+          </td>
+          <td style="padding: 0">
+            <button type="submit" th:formaction="@{/task/create}" th:text="登録"
+                    style="margin: 2px; padding: 2px; width: 4em;"></button>
           </td>
         </tr>
       </table>

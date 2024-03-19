@@ -158,4 +158,53 @@ public class TodoService {
         }
         return todoList;
     }
+
+    public boolean isValid(TaskData taskData, BindingResult result) {
+        boolean ans = true;
+        // タスクの件名が半角スペースだけまたは、""ならエラー
+        if (Utils.isBlank(taskData.getTitle())) {
+            var fieldError = new FieldError(
+                    result.getObjectName(),
+                    "newTask.title",
+                    "件名を入力してください");
+            result.addError(fieldError);
+            ans = false;
+        } else {
+            // タスクの件名が全角スペースだけで構成されていたらエラー
+            if (Utils.isAllDoubleSpace(taskData.getTitle())) {
+                var fieldError = new FieldError(
+                        result.getObjectName(),
+                        "newTask.title",
+                        "件名が全角スペースです"
+                );
+                result.addError(fieldError);
+                ans = false;
+            }
+        }
+        // 期限が未入力ならチェックしない
+        String deadline = taskData.getDeadline();
+        if (deadline.isEmpty()) {
+            return ans;
+        }
+        // 期限の形式チェック
+        if (!Utils.isValidDateFormat(deadline)) {
+            var fieldError = new FieldError(
+                    result.getObjectName(),
+                    "newTask.deadline",
+                    "期限を入力するときはyyyy-mm-dd形式で入力してください");
+            result.addError(fieldError);
+            ans = false;
+        } else {
+            // 過去日付ならエラー
+            if (!Utils.isTodayOrFurtureDate(deadline)) {
+                var fieldError = new FieldError(
+                        result.getObjectName(),
+                        "newTask.deadline",
+                        "過去の日付は入力できません");
+                result.addError(fieldError);
+                ans = false;
+            }
+        }
+        return ans;
+    }
 }

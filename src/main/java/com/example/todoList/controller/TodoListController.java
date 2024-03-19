@@ -5,6 +5,7 @@ import com.example.todoList.dao.TodoDaoImpl;
 import com.example.todoList.entity.Todo;
 import com.example.todoList.form.TodoData;
 import com.example.todoList.form.TodoQuery;
+import com.example.todoList.repository.TaskRepository;
 import com.example.todoList.repository.TodoRepository;
 import com.example.todoList.service.TodoService;
 import jakarta.annotation.PostConstruct;
@@ -19,10 +20,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -31,6 +29,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @RequiredArgsConstructor
 public class TodoListController {
     private final TodoRepository todoRepository;
+    private final TaskRepository taskRepository;
     private final TodoService todoService;
     private final HttpSession session;
 
@@ -78,7 +77,7 @@ public class TodoListController {
             var todo = todoData.toEntity();
             todoRepository.saveAndFlush(todo);
             redirectAttributes.addFlashAttribute("msg", new OpMsg("I", "Todoを追加しました"));
-            return "redirect:/todo";
+            return "redirect:/todo/" + todo.getId();
         } else {
             // エラーあり
             model.addAttribute("msg", new OpMsg("E", "入力に誤りがあります"));
@@ -96,7 +95,7 @@ public class TodoListController {
     public ModelAndView todoById(@PathVariable(name="id") int id, ModelAndView mv) {
         mv.setViewName("todoForm");
         var todo = todoRepository.findById(id).get();
-        mv.addObject("todoData", todo);
+        mv.addObject("todoData", new TodoData(todo));
         // 画面表示するボタンの切り替えに使用
         session.setAttribute("mode", "update");
         return mv;
@@ -171,4 +170,36 @@ public class TodoListController {
         }
         return mv;
     }
+
+    @GetMapping("/task/delete")
+    public String deleteTask(@RequestParam(name="task_id") int taskId,
+                             @RequestParam(name = "todo_id") int todoId,
+                             RedirectAttributes redirectAttributes) {
+        taskRepository.deleteById(taskId);
+        redirectAttributes.addFlashAttribute("msg",
+                new OpMsg("I", "タスクを削除しました"));
+        return "redirect:/todo/" + todoId;
+    }
+
+    @PostMapping("/task/create")
+    public String createTask(@ModelAttribute TodoData todoData, BindingResult result,
+                             Model model, RedirectAttributes redirectAttributes) {
+        // エラーチェック
+        boolean isValid = todoService.isValid(todoData.getNewTask(), result);
+        if (isValid) {
+            // エラーなし
+            var todo = todoData.toEntity();
+            var task = todoData.toTaskEntity();
+            task.setTodo(todo);
+            taskRepository.saveAndFlush(task);
+            redirectAttributes.addFlashAttribute("msg",
+                    new OpMsg("I", "タスクを登録しました"));
+            return "redirect:/todo/" + todo.getId();
+        } else {
+            // エラーあり
+            model.addAttribute("msg", new OpMsg("E", "入力に誤りがあります"));
+            return "todoForm";
+        }
+    }
+
 }

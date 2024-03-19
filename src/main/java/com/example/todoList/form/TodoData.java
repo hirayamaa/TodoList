@@ -8,13 +8,16 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.sql.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
+@NoArgsConstructor
 public class TodoData {
     private Integer id;
 
@@ -33,6 +36,26 @@ public class TodoData {
 
     @Valid
     private List<TaskData> taskList;
+
+    private TaskData newTask;
+
+    public TodoData(Todo todo) {
+        this.id = todo.getId();
+        this.title = todo.getTitle();
+        this.importance = todo.getImportance();
+        this.urgency = todo.getUrgency();
+        this.deadline = Utils.date2str(todo.getDeadline());
+        this.done = todo.getDone();
+        // 登録済Task
+        this.taskList = new ArrayList<>();
+        String dt;
+        for (var task : todo.getTaskList()) {
+            dt = Utils.date2str(task.getDeadline());
+            this.taskList.add(new TaskData(task.getId(), task.getTitle(), dt, task.getDone()));
+        }
+        // 新規追加用Task
+        newTask = new TaskData();
+    }
 
     /**
      * 入力データからEntityを生成して返す
@@ -65,5 +88,14 @@ public class TodoData {
             }
         }
         return todo;
+    }
+
+    public Task toTaskEntity() {
+        var task = new Task();
+        task.setId(newTask.getId());
+        task.setTitle(newTask.getTitle());
+        task.setDeadline(Utils.str2date(newTask.getDeadline()));
+        task.setDone(newTask.getDone());
+        return task;
     }
 }
